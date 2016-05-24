@@ -14,8 +14,10 @@ typedef struct _contato{
 } TpContato;
 
 void criarVetor(TpContato v[], int tam);
+void copiarVetor(TpContato vo[], TpContato vd[], int tam);
 void imprimirVetor(TpContato v[], int tam);
 void criarLista(TpContato **lista, int tam);
+void copiarLista(TpContato **lista_o, TpContato **lista_d);
 void imprimirLista(TpContato *lista);
 
 int main() {
@@ -48,9 +50,15 @@ int main() {
 				break;
 			case 3:
 				printf("Radix sort\n");
+				copiarVetor(vetor, vetor_op, TAM_VETOR);
+				copiarLista(&lista, &lista_op);
+				// usar lista_op e vetor_op nas operações para manter os originais intactos
 				break;
 			case 4:
 				printf("Quick sort\n");
+				copiarVetor(vetor, vetor_op, TAM_VETOR);
+				copiarLista(&lista, &lista_op);
+				// usar lista_op e vetor_op nas operações para manter os originais intactos
 				break;
 			case 5:
 				printf("Saindo...\n");
@@ -73,6 +81,14 @@ void criarVetor(TpContato v[], int tam) {
 		snprintf(v[i].nome, sizeof v[i].nome, "Fulano %d", num);
 		num = rand() % (MAX_FONE - MIN_FONE + 1) + MIN_FONE;
 		snprintf(v[i].fone, sizeof v[i].fone, "%d", num);
+	}
+}
+
+void copiarVetor(TpContato vo[], TpContato vd[], int tam) {
+	int i;
+
+	for (i = 0; i < tam; i++) {
+		vd[i] = vo[i];
 	}
 }
 
@@ -124,6 +140,43 @@ void criarLista(TpContato **lista, int tam) {
 		} else {
 			// erro de alocação
 			return;
+		}
+	}
+}
+
+void copiarLista(TpContato **lista_o, TpContato **lista_d) {
+	TpContato *temp, *ult = NULL, *temp_o = *lista_o, *temp_d = *lista_d;
+
+	while (temp_o != NULL) {
+		// se a lista destino já está alocada
+		if (temp_d != NULL) {
+			strcpy(temp_d->nome, temp_o->nome);
+			strcpy(temp_d->fone, temp_o->fone);
+			temp_o = temp_o->prox;
+			temp_d = temp_d->prox;
+		} else {
+			temp = (TpContato *) malloc(sizeof(TpContato));
+
+			if (temp != NULL) {
+				strcpy(temp->nome, temp_o->nome);
+				strcpy(temp->fone, temp_o->fone);
+
+				temp->ant = NULL;
+				temp->prox = NULL;
+
+				if (ult == NULL) {
+					*lista_d = ult = temp;
+				} else {
+					ult->prox = temp;
+					temp->ant = ult;
+					ult = temp;
+				}
+
+				temp_o = temp_o->prox;
+			} else {
+				// erro de alocação
+				return;
+			}
 		}
 	}
 }
