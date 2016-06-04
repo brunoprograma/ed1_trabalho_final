@@ -14,8 +14,11 @@ typedef struct _contato{
 } TpContato;
 
 void criarVetor(TpContato v[], int tam);
+void copiarVetor(TpContato vo[], TpContato vd[], int tam);
 void imprimirVetor(TpContato v[], int tam);
+void quickSortVetor(TpContato vetor[], int ini, int fim);
 void criarLista(TpContato **lista, int tam);
+void copiarLista(TpContato **lista_o, TpContato **lista_d);
 void imprimirLista(TpContato *lista);
 
 int main() {
@@ -48,9 +51,17 @@ int main() {
 				break;
 			case 3:
 				printf("Radix sort\n");
+				copiarVetor(vetor, vetor_op, TAM_VETOR);
+				copiarLista(&lista, &lista_op);
+				// usar lista_op e vetor_op nas operações para manter os originais intactos
 				break;
 			case 4:
 				printf("Quick sort\n");
+				copiarVetor(vetor, vetor_op, TAM_VETOR);
+				copiarLista(&lista, &lista_op);
+				// usar lista_op e vetor_op nas operações para manter os originais intactos
+				quickSortVetor(vetor_op, 0, TAM_VETOR-1);
+				imprimirVetor(vetor_op, TAM_VETOR);
 				break;
 			case 5:
 				printf("Saindo...\n");
@@ -70,9 +81,17 @@ void criarVetor(TpContato v[], int tam) {
 
 	for (i = 0; i < tam; i++) {
 		num = rand() % tam;
-		snprintf(v[i].nome, sizeof v[i].nome, "Fulano %d", num);
+		snprintf(v[i].nome, sizeof v[i].nome, "Fulano %02d", num);
 		num = rand() % (MAX_FONE - MIN_FONE + 1) + MIN_FONE;
 		snprintf(v[i].fone, sizeof v[i].fone, "%d", num);
+	}
+}
+
+void copiarVetor(TpContato vo[], TpContato vd[], int tam) {
+	int i;
+
+	for (i = 0; i < tam; i++) {
+		vd[i] = vo[i];
 	}
 }
 
@@ -88,6 +107,41 @@ void imprimirVetor(TpContato v[], int tam) {
 	}
 
 	printf("--------------------\n\n");
+}
+
+int partitionVetor(TpContato vetor[], int p, int q) {
+	int i, j;
+	TpContato pivo, aux;
+
+	pivo = vetor[p];
+	i = p - 1;
+	j = q + 1;
+
+	do {
+		do {j--;} while(strcmp(vetor[j].nome, pivo.nome) > 0);
+		do {i++;} while(strcmp(vetor[i].nome, pivo.nome) < 0);
+
+		if (i < j) {
+			strcpy(aux.nome, vetor[i].nome);
+			strcpy(aux.fone, vetor[i].fone);
+			strcpy(vetor[i].nome, vetor[j].nome);
+			strcpy(vetor[i].fone, vetor[j].fone);
+			strcpy(vetor[j].nome, aux.nome);
+			strcpy(vetor[j].fone, aux.fone);
+		}
+	} while (i < j);
+
+	return j;
+}
+
+void quickSortVetor(TpContato vetor[], int ini, int fim) {
+	int part;
+
+	if (ini < fim) {
+		part = partitionVetor(vetor, ini, fim);
+		quickSortVetor(vetor, ini, part);
+		quickSortVetor(vetor, part+1, fim);
+	}
 }
 
 void criarLista(TpContato **lista, int tam) {
@@ -106,7 +160,7 @@ void criarLista(TpContato **lista, int tam) {
 		if (temp != NULL) {
 			num = rand() % tam;
 			snprintf(temp->nome, sizeof temp->nome, "Fulano %d", num);
-			
+
 			num = rand() % (tam_max_fone - MIN_FONE + 1) + MIN_FONE;
 			snprintf(temp->fone, sizeof temp->fone, "%d", num);
 
@@ -124,6 +178,43 @@ void criarLista(TpContato **lista, int tam) {
 		} else {
 			// erro de alocação
 			return;
+		}
+	}
+}
+
+void copiarLista(TpContato **lista_o, TpContato **lista_d) {
+	TpContato *temp, *ult = NULL, *temp_o = *lista_o, *temp_d = *lista_d;
+
+	while (temp_o != NULL) {
+		// se a lista destino já está alocada
+		if (temp_d != NULL) {
+			strcpy(temp_d->nome, temp_o->nome);
+			strcpy(temp_d->fone, temp_o->fone);
+			temp_o = temp_o->prox;
+			temp_d = temp_d->prox;
+		} else {
+			temp = (TpContato *) malloc(sizeof(TpContato));
+
+			if (temp != NULL) {
+				strcpy(temp->nome, temp_o->nome);
+				strcpy(temp->fone, temp_o->fone);
+
+				temp->ant = NULL;
+				temp->prox = NULL;
+
+				if (ult == NULL) {
+					*lista_d = ult = temp;
+				} else {
+					ult->prox = temp;
+					temp->ant = ult;
+					ult = temp;
+				}
+
+				temp_o = temp_o->prox;
+			} else {
+				// erro de alocação
+				return;
+			}
 		}
 	}
 }
