@@ -17,9 +17,11 @@ void criarVetor(TpContato v[], int tam);
 void copiarVetor(TpContato vo[], TpContato vd[], int tam);
 void imprimirVetor(TpContato v[], int tam);
 void quickSortVetor(TpContato vetor[], int ini, int fim);
+void radixSortVetor(TpContato a[], int l, int r, int d, int N);
 void criarLista(TpContato **lista, int tam);
 void copiarLista(TpContato **lista_o, TpContato **lista_d);
 void imprimirLista(TpContato *lista);
+void quickSortLista(TpContato *lista);
 
 int main() {
 	int qtde, opcao = 0;
@@ -54,6 +56,8 @@ int main() {
 				copiarVetor(vetor, vetor_op, TAM_VETOR);
 				copiarLista(&lista, &lista_op);
 				// usar lista_op e vetor_op nas operações para manter os originais intactos
+				radixSortVetor(vetor_op, 0, 29, 0, 40);
+				imprimirVetor(vetor_op, TAM_VETOR);
 				break;
 			case 4:
 				printf("Quick sort\n");
@@ -62,6 +66,8 @@ int main() {
 				// usar lista_op e vetor_op nas operações para manter os originais intactos
 				quickSortVetor(vetor_op, 0, TAM_VETOR-1);
 				imprimirVetor(vetor_op, TAM_VETOR);
+				quickSortLista(lista_op);
+				imprimirLista(lista_op);
 				break;
 			case 5:
 				printf("Saindo...\n");
@@ -142,6 +148,24 @@ void quickSortVetor(TpContato vetor[], int ini, int fim) {
 		quickSortVetor(vetor, ini, part);
 		quickSortVetor(vetor, part+1, fim);
 	}
+}
+
+void radixSortVetor(TpContato a[], int l, int r, int d, int N) {
+	TpContato temp[N];
+	int count[256] = {0}, i, k;
+
+	if (r <= l + 1) return;
+
+	for (i = 0; i < N; i++)
+		count[a[i].nome[d] + 1]++;
+	for (k = 1; k < 256; k++)
+		count[k] += count[k-1];
+	for (i = 0; i < N; i++)
+		temp[count[a[i].nome[d]]++].nome = a[i].nome;
+	for (i = 0; i < N; i++)
+		a[i] = temp[i];
+	for (i = 1; i < 255; i++)
+		radixSortVetor(a, l + count[i], l + count[i+1], d+1, N);
 }
 
 void criarLista(TpContato **lista, int tam) {
@@ -232,4 +256,54 @@ void imprimirLista(TpContato *lista) {
 	}
 
 	printf("--------------------\n\n");
+}
+
+TpContato * fimDaLista(TpContato *lista) {
+	TpContato *fim = lista;
+
+	while (fim && fim->prox)
+		fim = fim->prox;
+
+	return fim;
+}
+
+TpContato * partitionLista(TpContato *p, TpContato *q) {
+	TpContato *i, *j, *pivo, aux;
+
+	pivo = p;
+	i = p;
+	j = q;
+
+	while(j != NULL && strcmp(j->nome, pivo->nome) > 0) {j = j->ant;}
+	while(i != NULL && strcmp(i->nome, pivo->nome) < 0) {i = i->prox;}
+
+	while (j != NULL && i != j && i != j->prox) {
+		strcpy(aux.nome, i->nome);
+		strcpy(aux.fone, i->fone);
+		strcpy(i->nome, j->nome);
+		strcpy(i->fone, j->fone);
+		strcpy(j->nome, aux.nome);
+		strcpy(j->fone, aux.fone);
+	
+		do {j = (j != NULL)? j->ant: j;} while(j != NULL && strcmp(j->nome, pivo->nome) > 0);
+		do {i = (i != NULL)? i->prox: i;} while(i != NULL && strcmp(i->nome, pivo->nome) < 0);
+	}
+
+	return j;
+}
+
+void _quickSortLista(TpContato *ini, TpContato *fim) {
+	TpContato *part;
+
+	if (fim != NULL && ini != fim && ini != fim->prox) {
+		part = partitionLista(ini, fim);
+		_quickSortLista(ini, part);
+		_quickSortLista(part->prox, fim);
+	}
+}
+
+void quickSortLista(TpContato *lista) {
+	TpContato *fim = fimDaLista(lista);
+
+	_quickSortLista(lista, fim);
 }
