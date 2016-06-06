@@ -5,6 +5,7 @@
 #define TAM_VETOR 40
 #define MIN_FONE 10000000
 #define MAX_FONE 99999999
+#define ASCII 256
 
 typedef struct _contato{
 	char nome[40];
@@ -17,9 +18,11 @@ void criarVetor(TpContato v[], int tam);
 void copiarVetor(TpContato vo[], TpContato vd[], int tam);
 void imprimirVetor(TpContato v[], int tam);
 void quickSortVetor(TpContato vetor[], int ini, int fim);
+void radixSortVetor(TpContato a[], int N);
 void criarLista(TpContato **lista, int tam);
 void copiarLista(TpContato **lista_o, TpContato **lista_d);
 void imprimirLista(TpContato *lista);
+void quickSortLista(TpContato *lista);
 
 int main() {
 	int qtde, opcao = 0;
@@ -54,6 +57,8 @@ int main() {
 				copiarVetor(vetor, vetor_op, TAM_VETOR);
 				copiarLista(&lista, &lista_op);
 				// usar lista_op e vetor_op nas operações para manter os originais intactos
+				radixSortVetor(vetor_op, TAM_VETOR);
+				imprimirVetor(vetor_op, TAM_VETOR);
 				break;
 			case 4:
 				printf("Quick sort\n");
@@ -62,6 +67,8 @@ int main() {
 				// usar lista_op e vetor_op nas operações para manter os originais intactos
 				quickSortVetor(vetor_op, 0, TAM_VETOR-1);
 				imprimirVetor(vetor_op, TAM_VETOR);
+				quickSortLista(lista_op);
+				imprimirLista(lista_op);
 				break;
 			case 5:
 				printf("Saindo...\n");
@@ -82,6 +89,7 @@ void criarVetor(TpContato v[], int tam) {
 	for (i = 0; i < tam; i++) {
 		num = rand() % tam;
 		snprintf(v[i].nome, sizeof v[i].nome, "Fulano %02d", num);
+
 		num = rand() % (MAX_FONE - MIN_FONE + 1) + MIN_FONE;
 		snprintf(v[i].fone, sizeof v[i].fone, "%d", num);
 	}
@@ -142,6 +150,36 @@ void quickSortVetor(TpContato vetor[], int ini, int fim) {
 		quickSortVetor(vetor, ini, part);
 		quickSortVetor(vetor, part+1, fim);
 	}
+}
+
+int charAt(char vetor[], int pos) {
+    return (int) vetor[pos];
+}
+
+void _radixSortVetor(TpContato a[], TpContato temp[], int l, int r, int d, int N) {
+	int i, k, count[ASCII] = {0};
+
+	if (r <= l+1)
+        return;
+
+	for (i = 0; i < N; i++)
+		count[charAt(a[i].nome, d) + 1]++;
+	for (k = 1; k < ASCII; k++)
+		count[k] += count[k-1];
+	for (i = 0; i < N; i++)
+		temp[count[charAt(a[i].nome, d)]++] = a[i];
+	for (i = 0; i < N; i++)
+		a[i] = temp[i];
+
+	for (i = 1; i < ASCII-1; i++) {
+		_radixSortVetor(a, temp, l + count[i], l + count[i+1], d+1, N);
+	}
+}
+
+void radixSortVetor(TpContato a[], int N) {
+    TpContato temp[N];
+
+    _radixSortVetor(a, temp, 0, N, 0, N);
 }
 
 void criarLista(TpContato **lista, int tam) {
@@ -232,4 +270,54 @@ void imprimirLista(TpContato *lista) {
 	}
 
 	printf("--------------------\n\n");
+}
+
+TpContato * fimDaLista(TpContato *lista) {
+	TpContato *fim = lista;
+
+	while (fim && fim->prox)
+		fim = fim->prox;
+
+	return fim;
+}
+
+TpContato * partitionLista(TpContato *p, TpContato *q) {
+	TpContato *i, *j, *pivo, aux;
+
+	pivo = p;
+	i = p;
+	j = q;
+
+	while(j != NULL && strcmp(j->nome, pivo->nome) > 0) {j = j->ant;}
+	while(i != NULL && strcmp(i->nome, pivo->nome) < 0) {i = i->prox;}
+
+	while (j != NULL && i != j && i != j->prox) {
+		strcpy(aux.nome, i->nome);
+		strcpy(aux.fone, i->fone);
+		strcpy(i->nome, j->nome);
+		strcpy(i->fone, j->fone);
+		strcpy(j->nome, aux.nome);
+		strcpy(j->fone, aux.fone);
+
+		do {j = (j != NULL)? j->ant: j;} while(j != NULL && strcmp(j->nome, pivo->nome) > 0);
+		do {i = (i != NULL)? i->prox: i;} while(i != NULL && strcmp(i->nome, pivo->nome) < 0);
+	}
+
+	return j;
+}
+
+void _quickSortLista(TpContato *ini, TpContato *fim) {
+	TpContato *part;
+
+	if (fim != NULL && ini != fim && ini != fim->prox) {
+		part = partitionLista(ini, fim);
+		_quickSortLista(ini, part);
+		_quickSortLista(part->prox, fim);
+	}
+}
+
+void quickSortLista(TpContato *lista) {
+	TpContato *fim = fimDaLista(lista);
+
+	_quickSortLista(lista, fim);
 }
