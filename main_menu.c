@@ -5,7 +5,7 @@
 #define TAM_VETOR 40
 #define MIN_FONE 10000000
 #define MAX_FONE 99999999
-#define R 256
+#define ASCII 256
 
 typedef struct _contato{
 	char nome[40];
@@ -18,7 +18,7 @@ void criarVetor(TpContato v[], int tam);
 void copiarVetor(TpContato vo[], TpContato vd[], int tam);
 void imprimirVetor(TpContato v[], int tam);
 void quickSortVetor(TpContato vetor[], int ini, int fim);
-void radixSortVetor(TpContato v[], int N);
+void radixSortVetor(TpContato a[], int N);
 void criarLista(TpContato **lista, int tam);
 void copiarLista(TpContato **lista_o, TpContato **lista_d);
 void imprimirLista(TpContato *lista);
@@ -89,6 +89,7 @@ void criarVetor(TpContato v[], int tam) {
 	for (i = 0; i < tam; i++) {
 		num = rand() % tam;
 		snprintf(v[i].nome, sizeof v[i].nome, "Fulano %02d", num);
+
 		num = rand() % (MAX_FONE - MIN_FONE + 1) + MIN_FONE;
 		snprintf(v[i].fone, sizeof v[i].fone, "%d", num);
 	}
@@ -152,35 +153,33 @@ void quickSortVetor(TpContato vetor[], int ini, int fim) {
 }
 
 int charAt(char vetor[], int pos) {
-	if (pos < strlen(vetor))
-		return (int) vetor[pos];
-
-	return -1;
+    return (int) vetor[pos];
 }
 
-void _radixSortVetor(TpContato a[], TpContato aux[], int lo, int hi, int d) {
-	int i, r, count[R+2];
+void _radixSortVetor(TpContato a[], TpContato temp[], int l, int r, int d, int N) {
+	int i, k, count[ASCII] = {0};
 
-	imprimirVetor(a, 40);
-	if (hi <= lo) return;
+	if (r <= l+1)
+        return;
 
-	for (i = lo; i <= hi; i++)
-		count[charAt(a[i].nome, d) + 2]++;
-	for (r = 0; r < R+1; r++)
-		count[r+1] += count[r];
-	for (i = lo; i <= hi; i++)
-		aux[count[charAt(a[i].nome, d) + 1]++] = a[i];
-	for (i = lo; i <= hi; i++)
-		a[i] = aux[i - lo];
+	for (i = 0; i < N; i++)
+		count[charAt(a[i].nome, d) + 1]++;
+	for (k = 1; k < ASCII; k++)
+		count[k] += count[k-1];
+	for (i = 0; i < N; i++)
+		temp[count[charAt(a[i].nome, d)]++] = a[i];
+	for (i = 0; i < N; i++)
+		a[i] = temp[i];
 
-	for (r = 0; r < R; r++)
-		_radixSortVetor(a, aux, lo + count[r], lo + count[r+1] - 1, d+1);
+	for (i = 1; i < ASCII-1; i++) {
+		_radixSortVetor(a, temp, l + count[i], l + count[i+1], d+1, N);
+	}
 }
 
-void radixSortVetor(TpContato v[], int N) {
-	TpContato aux[N];
+void radixSortVetor(TpContato a[], int N) {
+    TpContato temp[N];
 
-	_radixSortVetor(v, aux, 0, N-1, 0);
+    _radixSortVetor(a, temp, 0, N, 0, N);
 }
 
 void criarLista(TpContato **lista, int tam) {
