@@ -153,33 +153,34 @@ void quickSortVetor(TpContato vetor[], int ini, int fim) {
 }
 
 int charAt(char vetor[], int pos) {
-    return (int) vetor[pos];
+	if (pos < strlen(vetor))
+    	return (int) vetor[pos];
+    return -1;
 }
 
-void _radixSortVetor(TpContato a[], TpContato temp[], int l, int r, int d, int N) {
-	int i, k, count[ASCII] = {0};
+void _radixSortVetor(TpContato a[], TpContato temp[], int lo, int hi, int d, int N) {
+	int i, r, count[ASCII+2] = {0};
 
-	if (r <= l+1)
-        return;
+	if (hi <= lo) return;
 
-	for (i = 0; i < N; i++)
-		count[charAt(a[i].nome, d) + 1]++;
-	for (k = 1; k < ASCII; k++)
-		count[k] += count[k-1];
-	for (i = 0; i < N; i++)
-		temp[count[charAt(a[i].nome, d)]++] = a[i];
-	for (i = 0; i < N; i++)
-		a[i] = temp[i];
+	for (i = lo; i <= hi; i++)
+		count[charAt(a[i].nome, d) + 2]++;
+	for (r = 0; r < ASCII+1; r++)
+		count[r+1] += count[r];
+	for (i = lo; i <= hi; i++)
+		temp[count[charAt(a[i].nome, d) + 1]++] = a[i];
+	for (i = lo; i <= hi; i++)
+		a[i] = temp[i - lo];
 
-	for (i = 1; i < ASCII-1; i++) {
-		_radixSortVetor(a, temp, l + count[i], l + count[i+1], d+1, N);
+	for (r = 0; r < ASCII; r++) {
+		_radixSortVetor(a, temp, lo + count[r], lo + count[r+1] - 1, d+1, N);
 	}
 }
 
 void radixSortVetor(TpContato a[], int N) {
     TpContato temp[N];
 
-    _radixSortVetor(a, temp, 0, N, 0, N);
+    _radixSortVetor(a, temp, 0, N - 1, 0, N);
 }
 
 void criarLista(TpContato **lista, int tam) {
