@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 #define TAM_VETOR 40
 #define MIN_FONE 10000000
 #define MAX_FONE 99999999
@@ -23,6 +24,7 @@ void criarLista(TpContato **lista, int tam);
 void copiarLista(TpContato **lista_o, TpContato **lista_d);
 void imprimirLista(TpContato *lista);
 void quickSortLista(TpContato *lista);
+void radixSortLista(TpContato *a, int N);
 
 int main() {
 	int qtde, opcao = 0;
@@ -59,6 +61,8 @@ int main() {
 				// usar lista_op e vetor_op nas operações para manter os originais intactos
 				radixSortVetor(vetor_op, TAM_VETOR);
 				imprimirVetor(vetor_op, TAM_VETOR);
+				radixSortLista(lista_op, qtde);
+				imprimirLista(lista_op);
 				break;
 			case 4:
 				printf("Quick sort\n");
@@ -81,14 +85,28 @@ int main() {
 	return 0;
 }
 
+int contaDigitos(int num) {
+    int n = 0;
+    if (num == 0) return 1;
+
+    while(num) {
+        num /= 10;
+        n++;
+    }
+
+    return n;
+}
+
 void criarVetor(TpContato v[], int tam) {
-	int i, num;
+	int i, num, digitos;
 
 	srand(time(NULL));
 
+	digitos = contaDigitos(tam);
+
 	for (i = 0; i < tam; i++) {
 		num = rand() % tam;
-		snprintf(v[i].nome, sizeof v[i].nome, "Fulano %02d", num);
+		snprintf(v[i].nome, sizeof v[i].nome, "Fulano %0*d", digitos, num);
 
 		num = rand() % (MAX_FONE - MIN_FONE + 1) + MIN_FONE;
 		snprintf(v[i].fone, sizeof v[i].fone, "%d", num);
@@ -184,10 +202,12 @@ void radixSortVetor(TpContato a[], int N) {
 }
 
 void criarLista(TpContato **lista, int tam) {
-	int i, num, tam_max_fone = MAX_FONE;
+	int i, num, digitos, tam_max_fone = MAX_FONE;
 	TpContato *temp, *ult = NULL;
 
 	srand(time(NULL));
+
+	digitos = contaDigitos(tam);
 
 	// exceção caso seja um numero muito grande de elementos, aumenta o tamanho do telefone
 	if (tam > (MAX_FONE - MIN_FONE))
@@ -198,7 +218,7 @@ void criarLista(TpContato **lista, int tam) {
 
 		if (temp != NULL) {
 			num = rand() % tam;
-			snprintf(temp->nome, sizeof temp->nome, "Fulano %d", num);
+			snprintf(temp->nome, sizeof temp->nome, "Fulano %0*d", digitos, num);
 
 			num = rand() % (tam_max_fone - MIN_FONE + 1) + MIN_FONE;
 			snprintf(temp->fone, sizeof temp->fone, "%d", num);
@@ -321,4 +341,67 @@ void quickSortLista(TpContato *lista) {
 	TpContato *fim = fimDaLista(lista);
 
 	_quickSortLista(lista, fim);
+}
+
+TpContato * andarLista(TpContato *origem, int passos) { // positivo pra frente, negativo pra tras
+	int i;
+	TpContato *destino;
+
+	destino = origem;
+
+	if (passos > 0)
+		for (i = 0; i < passos && destino != NULL; destino = destino->prox, i++);
+	if (passos < 0)
+		for (i = 0; i > passos && destino != NULL; destino = destino->ant, i--);
+
+	return destino;
+}
+
+void copyData(TpContato *origem, TpContato *destino) {
+	if (origem == NULL) return;
+
+	strcpy(destino->nome, origem->nome);
+	strcpy(destino->fone, origem->fone);
+}
+
+void _radixSortLista(TpContato *a, TpContato *temp, int lo, int hi, int d, int N) {
+	TpContato *aux, *aux_temp;
+	int i, r, count[ASCII+2] = {0};
+
+	if (hi <= lo) return;
+
+	/*for (i = lo; i <= hi; i++)
+		count[charAt(a[i].nome, d) + 2]++;*/
+	for (i = lo; i <= hi; i++) {
+		aux = andarLista(a, i);
+		count[charAt(aux->nome, d) + 2]++;
+	}
+	for (r = 0; r < ASCII+1; r++)
+		count[r+1] += count[r];
+	/*for (i = lo; i <= hi; i++)
+		temp[count[charAt(a[i].nome, d) + 1]++] = a[i];*/
+	for (i = lo; i <= hi; i++) {
+		aux = andarLista(a, i);
+		aux_temp = andarLista(temp, count[charAt(aux->nome, d) + 1]++);
+		copyData(aux, aux_temp);
+	}
+	/*for (i = lo; i <= hi; i++)
+		a[i] = temp[i - lo];*/
+	for (i = lo; i <= hi; i++) {
+		aux = andarLista(a, i);
+		aux_temp = andarLista(temp, i-lo);
+		copyData(aux_temp, aux);
+	}
+
+	for (r = 0; r < ASCII; r++) {
+		_radixSortLista(a, temp, lo + count[r], lo + count[r+1] - 1, d+1, N);
+	}
+}
+
+void radixSortLista(TpContato *a, int N) {
+    TpContato *temp;
+
+    criarLista(&temp, N);
+
+    _radixSortLista(a, temp, 0, N - 1, 0, N);
 }
