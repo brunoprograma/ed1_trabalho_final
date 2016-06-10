@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <math.h>
 #define TAM_VETOR 40
 #define MIN_FONE 10000000
 #define MAX_FONE 99999999
@@ -29,6 +28,7 @@ void radixSortLista(TpContato *a, int N);
 int main() {
 	int qtde, opcao = 0;
 	TpContato *lista, *lista_op, vetor[TAM_VETOR], vetor_op[TAM_VETOR];
+	clock_t start, stop;
 
 	lista = lista_op = NULL;
 
@@ -59,20 +59,32 @@ int main() {
 				copiarVetor(vetor, vetor_op, TAM_VETOR);
 				copiarLista(&lista, &lista_op);
 				// usar lista_op e vetor_op nas operações para manter os originais intactos
+				start = clock();
 				radixSortVetor(vetor_op, TAM_VETOR);
+				stop = clock();
 				imprimirVetor(vetor_op, TAM_VETOR);
+				printf("Tempo: %lf segs.\n", ((double)(stop - start) / CLOCKS_PER_SEC));
+				start = clock();
 				radixSortLista(lista_op, qtde);
+				stop = clock();
 				imprimirLista(lista_op);
+				printf("Tempo: %lf segs.\n", ((double)(stop - start) / CLOCKS_PER_SEC));
 				break;
 			case 4:
 				printf("Quick sort\n");
 				copiarVetor(vetor, vetor_op, TAM_VETOR);
 				copiarLista(&lista, &lista_op);
 				// usar lista_op e vetor_op nas operações para manter os originais intactos
+				start = clock();
 				quickSortVetor(vetor_op, 0, TAM_VETOR-1);
+				stop = clock();
 				imprimirVetor(vetor_op, TAM_VETOR);
+				printf("Tempo: %lf segs.\n", ((double)(stop - start) / CLOCKS_PER_SEC));
+				start = clock();
 				quickSortLista(lista_op);
+				stop = clock();
 				imprimirLista(lista_op);
+				printf("Tempo: %lf segs.\n", ((double)(stop - start) / CLOCKS_PER_SEC));
 				break;
 			case 5:
 				printf("Saindo...\n");
@@ -343,54 +355,43 @@ void quickSortLista(TpContato *lista) {
 	_quickSortLista(lista, fim);
 }
 
-TpContato * andarLista(TpContato *origem, int passos) { // positivo pra frente, negativo pra tras
-	int i;
-	TpContato *destino;
+void indexLista(TpContato *lista, TpContato *v[], int N) {
+	int i;	
+	TpContato *elem = lista;
 
-	destino = origem;
-
-	if (passos > 0)
-		for (i = 0; i < passos && destino != NULL; destino = destino->prox, i++);
-	if (passos < 0)
-		for (i = 0; i > passos && destino != NULL; destino = destino->ant, i--);
-
-	return destino;
+	for (i = 0; i < N; elem = elem->prox, i++) {
+		v[i] = elem;			
+	}
 }
 
-void copyData(TpContato *origem, TpContato *destino) {
+void copyData(TpContato *destino, TpContato *origem) {
 	if (origem == NULL) return;
 
 	strcpy(destino->nome, origem->nome);
 	strcpy(destino->fone, origem->fone);
 }
 
-void _radixSortLista(TpContato *a, TpContato *temp, int lo, int hi, int d, int N) {
-	TpContato *aux, *aux_temp;
+void _radixSortLista(TpContato **a, TpContato **temp, int lo, int hi, int d, int N) {
+	TpContato *aux_a, *aux_temp;
 	int i, r, count[ASCII+2] = {0};
 
 	if (hi <= lo) return;
 
-	/*for (i = lo; i <= hi; i++)
-		count[charAt(a[i].nome, d) + 2]++;*/
 	for (i = lo; i <= hi; i++) {
-		aux = andarLista(a, i);
-		count[charAt(aux->nome, d) + 2]++;
+		aux_a = a[i];
+		count[charAt(aux_a->nome, d) + 2]++;
 	}
 	for (r = 0; r < ASCII+1; r++)
 		count[r+1] += count[r];
-	/*for (i = lo; i <= hi; i++)
-		temp[count[charAt(a[i].nome, d) + 1]++] = a[i];*/
 	for (i = lo; i <= hi; i++) {
-		aux = andarLista(a, i);
-		aux_temp = andarLista(temp, count[charAt(aux->nome, d) + 1]++);
-		copyData(aux, aux_temp);
+		aux_a = a[i];
+		aux_temp = temp[count[charAt(aux_a->nome, d) + 1]++];
+		copyData(aux_temp, aux_a);
 	}
-	/*for (i = lo; i <= hi; i++)
-		a[i] = temp[i - lo];*/
 	for (i = lo; i <= hi; i++) {
-		aux = andarLista(a, i);
-		aux_temp = andarLista(temp, i-lo);
-		copyData(aux_temp, aux);
+		aux_a = a[i];
+		aux_temp = temp[i-lo];
+		copyData(aux_a, aux_temp);
 	}
 
 	for (r = 0; r < ASCII; r++) {
@@ -399,9 +400,11 @@ void _radixSortLista(TpContato *a, TpContato *temp, int lo, int hi, int d, int N
 }
 
 void radixSortLista(TpContato *a, int N) {
-    TpContato *temp;
+	TpContato *temp, *index_a[N], *index_temp[N];
+	criarLista(&temp, N);
+	
+	indexLista(a, index_a, N);
+	indexLista(temp, index_temp, N);
 
-    criarLista(&temp, N);
-
-    _radixSortLista(a, temp, 0, N - 1, 0, N);
+	_radixSortLista(index_a, index_temp, 0, N - 1, 0, N);
 }
